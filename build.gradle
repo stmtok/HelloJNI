@@ -58,9 +58,10 @@ model {
                     cppCompiler.args '-I', "${buildDir}/generated/jni"
                     cppCompiler.args '-D_FILE_OFFSET_BITS=64'
                 } else if (targetPlatform.operatingSystem.windows) {
-                    cppCompiler.args "-I${Jvm.current().javaHome}/include"
-                    cppCompiler.args "-I${Jvm.current().javaHome}/include/win32"
-                    cppCompiler.args '-I', "${buildDir}/generated/jni"
+                    cppCompiler.args "/DWIN32", "/DWIN64"
+                    cppCompiler.args "/I${Jvm.current().javaHome}/include"
+                    cppCompiler.args "/I${Jvm.current().javaHome}/include/win32"
+                    cppCompiler.args "/I${buildDir}/generated/jni"
                     linker.args "Shlwapi.lib", "Advapi32.lib"
                 }
             }
