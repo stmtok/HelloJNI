@@ -30,6 +30,7 @@ task generateJniHeaders(type: JavaCompile) {
             '-h', file("${buildDir}/generated/jni"),
             '-d', file("${buildDir}/generated/jni-tmp")
     ]
+    // options.verbose = true
     doLast {
         delete file("${buildDir}/generated/jni-tmp")
     }
