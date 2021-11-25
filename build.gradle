@@ -2,7 +2,7 @@ import org.gradle.internal.jvm.Jvm
 
 plugins {
     id 'java'
-    id 'c'
+    id 'cpp'
 }
 
 group 'com.stmtok'
@@ -22,6 +22,19 @@ test {
     useJUnitPlatform()
 }
 
+task generateJniHeaders(type: JavaCompile) {
+    classpath = sourceSets.main.compileClasspath
+    destinationDir file("${buildDir}/generated/jni")
+    source = sourceSets.main.java
+    options.compilerArgs += [
+            '-h', file("${buildDir}/generated/jni"),
+            '-d', file("${buildDir}/generated/jni-tmp")
+    ]
+    doLast {
+        delete file("${buildDir}/generated/jni-tmp")
+    }
+}
+
 sourceCompatibility = JavaVersion.VERSION_11
 model {
     platforms {
@@ -32,21 +45,22 @@ model {
 
     components {
         stmtok(NativeLibrarySpec) {
+            targetPlatform "x64"
             binaries.all {
                 if (targetPlatform.operatingSystem.macOsX) {
-                    cCompiler.args '-I', "${Jvm.current().javaHome}/include"
-                    cCompiler.args '-I', "${Jvm.current().javaHome}/include/darwin"
+                    cppCompiler.args '-I', "${Jvm.current().javaHome}/include"
+                    cppCompiler.args '-I', "${Jvm.current().javaHome}/include/darwin"
+                    cppCompiler.args '-I', "${buildDir}/generated/jni"
                 } else if (targetPlatform.operatingSystem.linux) {
-                    cCompiler.args '-I', "${Jvm.current().javaHome}/include"
-                    cCompiler.args '-I', "${Jvm.current().javaHome}/include/linux"
-                    cCompiler.args '-D_FILE_OFFSET_BITS=64'
+                    cppCompiler.args '-I', "${Jvm.current().javaHome}/include"
+                    cppCompiler.args '-I', "${Jvm.current().javaHome}/include/linux"
+                    cppCompiler.args '-I', "${buildDir}/generated/jni"
+                    cppCompiler.args '-D_FILE_OFFSET_BITS=64'
                 } else if (targetPlatform.operatingSystem.windows) {
-                    cCompiler.args "-I${Jvm.current().javaHome}/include"
-                    cCompiler.args "-I${Jvm.current().javaHome}/include/win32"
+                    cppCompiler.args "-I${Jvm.current().javaHome}/include"
+                    cppCompiler.args "-I${Jvm.current().javaHome}/include/win32"
+                    cppCompiler.args '-I', "${buildDir}/generated/jni"
                     linker.args "Shlwapi.lib", "Advapi32.lib"
-                } else if (targetPlatform.operatingSystem.freeBSD) {
-                    cCompiler.args '-I', "${Jvm.current().javaHome}/include"
-                    cCompiler.args '-I', "${Jvm.current().javaHome}/include/freebsd"
                 }
             }
         }
@@ -54,3 +68,4 @@ model {
 }
 
 test.dependsOn 'stmtokSharedLibrary'
+assemble.dependsOn generateJniHeaders
